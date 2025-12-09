@@ -4,25 +4,57 @@ project(cg LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_library(glad STATIC external/glad/src/glad.c)
-target_include_directories(glad PUBLIC external/glad/include)
+# ensure paths are absolute relative to this CMakeLists
+set(EXTERN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external)
 
-add_library(glfw STATIC)
-target_include_directories(glfw PUBLIC external/glfw/include)
+# glad (single C source)
+add_library(glad STATIC ${EXTERN_DIR}/glad/src/glad.c)
+target_include_directories(glad PUBLIC ${EXTERN_DIR}/glad/include)
 
-add_library(glm STATIC)
-target_include_directories(glm PUBLIC external/glm/)
+# glfw: prefer subdirectory if present, otherwise try to find a system package
+if(EXISTS "${EXTERN_DIR}/glfw/CMakeLists.txt")
+    add_subdirectory(${EXTERN_DIR}/glfw)
+else()
+    find_package(glfw3 QUIET)
+    # On some installs the target is glfw or glfw3 or GLFW::GLFW; we will handle below.
+endif()
 
-add_subdirectory(external/glfw)
-add_subdirectory(external/glm)
+# glm (header-only)
+if(EXISTS "${EXTERN_DIR}/glm/CMakeLists.txt")
+    add_subdirectory(${EXTERN_DIR}/glm)
+else()
+    find_package(glm QUIET) # optional: system-installed glm
+endif()
 
-# 主程序
-add_executable(cg src/main.cpp)
+# main executable
+# add_executable(cg src/main.cpp)
+add_executable(cg src/lights/basic_scene.cpp src/utilities/utilities.cpp)
 
-# 链接依赖
-target_link_libraries(cg PRIVATE glad glfw glm)
+# Link libraries: check which glfw/glm targets exist and link appropriately
+if(TARGET glfw)                    # typical when using GLFW source subdir
+    target_link_libraries(cg PRIVATE glad glfw)
+elseif(TARGET glfw3)                # sometimes target is glfw3
+    target_link_libraries(cg PRIVATE glad glfw3)
+elseif(TARGET GLFW::GLFW)          # imported target from find_package
+    target_link_libraries(cg PRIVATE glad GLFW::GLFW)
+elseif(TARGET glfw_shared OR TARGET glfw_static)
+    target_link_libraries(cg PRIVATE glad glfw_static)
+else()
+    message(FATAL_ERROR "GLFW not found or built. Add external/glfw as a submodule or install GLFW.")
+endif()
 
-# Windows 平台编译选项
+# glm target name varies: prefer glm::glm, then glm, else nothing (glm is header-only)
+if(TARGET glm::glm)
+    target_link_libraries(cg PRIVATE glm::glm)
+elseif(TARGET glm)
+    target_link_libraries(cg PRIVATE glm)
+endif()
+
+# Windows / MSVC compile options
 if(MSVC)
     target_compile_options(cg PRIVATE /W4 /permissive-)
 endif()
+
+# Useful: show summary
+message(STATUS "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
+message(STATUS "Using glad target: ${glad}")
