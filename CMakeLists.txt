@@ -28,7 +28,7 @@ endif()
 
 # main executable
 # add_executable(cg src/main.cpp)
-add_executable(cg src/lights/basic_scene.cpp src/utilities/utilities.cpp)
+add_executable(cg src/z_buffer.cpp src/utilities/utilities.cpp)
 
 # Link libraries: check which glfw/glm targets exist and link appropriately
 if(TARGET glfw)                    # typical when using GLFW source subdir

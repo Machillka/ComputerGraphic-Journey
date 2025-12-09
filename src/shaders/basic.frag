@@ -1,9 +1,9 @@
 #version 330 core
 
 out vec4 FragColor;
-uniform vec4 color;
 
 void main()
 {
-    FragColor = color;
+    // 提供白色便于  debug
+    FragColor = vec4(1.0);
 }

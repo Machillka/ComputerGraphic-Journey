@@ -8,7 +8,7 @@
 #include <sstream>
 #include <cmath>
 #include <string>
-#include "../utilities/utilities.h"
+#include "utilities/utilities.h"
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
 static std::string load_file(const char *path);
@@ -79,8 +79,7 @@ int main()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
 
-    Utilities::Shader modelShader("src/shaders/lights/blinn_phong.vert", "src/shaders/lights/blinn_phong.frag");
-    Utilities::Shader lightShader("src/shaders/basic.vert", "src/shaders/lights/global_light.frag");
+    Utilities::Shader modelShader("src/shaders/depth.vert", "src/shaders/depth.frag");
 
     // 设置相机参数
     glm::vec3 eye(0.0f, 0.0f, 3.0f);
@@ -111,36 +110,16 @@ int main()
         float aspect = width > 0 ? (float)width / (float)height : 4.0f / 3.0f;
         // 裁剪
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
-
         glm::mat4 view = glm::lookAt(eye, center, up);
-
-        lightPos.x = 1.0f + sin(glfwGetTime()) * 2.0f;
-        lightPos.y = sin(glfwGetTime() / 2.0f) * 1.0f;
-
-        lightShader.use();
-        lightModel = glm::mat4(1.0f);
-        lightModel = glm::translate(lightModel, lightPos);
-        lightModel = glm::scale(lightModel, glm::vec3(0.1f));
-        lightShader.setMat4("projection", projection);
-        lightShader.setMat4("view", view);
-        lightShader.setMat4("model", lightModel);
-        // 定义环境为白色光源
-        lightShader.setVec4("lightColor", lightColor);
-
-        // 绘制模拟光源
-        glBindVertexArray(lightVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
 
         // animate the model so the cube is visibly 3D (not just a front-facing square)
         float angle = 0.6f;
         model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, -3.0f));
+        model = glm::scale(model, glm::vec3(4.0f, 2.0f, 3.0f));
         model = glm::rotate(model, angle, glm::vec3(0.0f, 1.0f, 0.0f));
 
         modelShader.use();
-        modelShader.setVec4("objColor", glm::vec4(1.0f, 0.5f, 0.31f, 1.0f));
-        modelShader.setVec4("lightColor", lightColor);
-        modelShader.setVec3("lightPos", lightPos);
-        modelShader.setVec3("viewPos", eye);
         modelShader.setMat4("projection", projection);
         modelShader.setMat4("view", view);
         modelShader.setMat4("model", model);
